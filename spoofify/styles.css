@@ -1,6 +1,8 @@
 body {
     background-color: #1cd761;
-  padding: 3rem;
+  padding-left: 5%;
+  padding-right: 5%;
+  
 }
 
 header {
@@ -33,5 +35,30 @@ footer {
     justify-content: start;
     background-color: #b7facf;
     padding: 1rem;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
 
+}
+
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+padding-bottom: 4rem;
+}
+
+.buttons_releases {
+  display: flex;
+  gap: 1rem;
+  padding-bottom: 1rem;
 }

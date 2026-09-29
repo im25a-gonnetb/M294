@@ -1,0 +1,1510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOM Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block" rel="stylesheet">
+<style>
+  /* ---------- Material 3 tokens ---------- */
+  :root {
+    --primary: #4f5bd5;
+    --on-primary: #ffffff;
+    --primary-container: #e0e0ff;
+    --on-primary-container: #0b1470;
+    --secondary-container: #e2e0f9;
+    --on-secondary-container: #1a1a2c;
+    --tertiary: #b4386b;
+    --surface: #f7f6fb;
+    --surface-c-lowest: #ffffff;
+    --surface-c-low: #f3f2f8;
+    --surface-c: #eeedf4;
+    --surface-c-high: #e8e7ef;
+    --surface-c-highest: #e2e1e9;
+    --on-surface: #1b1b21;
+    --on-surface-variant: #5b5b66;
+    --outline: #86858f;
+    --outline-variant: #d4d2de;
+    --success: #1b7a3d;
+    --success-container: #d3f2dc;
+    --error: #ba1a1a;
+    --error-container: #ffdad6;
+
+    /* element categories */
+    --c-layout: #4f5bd5;
+    --c-text:   #15803d;
+    --c-list:   #0e7490;
+    --c-media:  #9333ea;
+    --c-form:   #c2410c;
+    --c-table:  #a16207;
+    --c-meta:   #78716c;
+    --c-id:     #c2410c;
+
+    --flash: rgba(255, 193, 7, .5);
+    --shadow-1: 0 1px 2px rgba(0,0,0,.14), 0 1px 3px 1px rgba(0,0,0,.06);
+    --shadow-3: 0 4px 8px 3px rgba(0,0,0,.10), 0 1px 3px rgba(0,0,0,.16);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --primary: #bdc2ff; --on-primary: #1e2987; --primary-container: #36409c; --on-primary-container: #e0e0ff;
+      --secondary-container: #3f3f52; --on-secondary-container: #e2e0f9; --tertiary: #ffb0cd;
+      --surface: #131318; --surface-c-lowest: #0e0e13; --surface-c-low: #1b1b21; --surface-c: #1f1f25;
+      --surface-c-high: #2a292f; --surface-c-highest: #35343a;
+      --on-surface: #e4e1e9; --on-surface-variant: #b5b3be; --outline: #8a8994; --outline-variant: #3f3f48;
+      --success: #8bd8a2; --success-container: #0f4a26; --error: #ffb4ab; --error-container: #93000a;
+      --c-layout: #a5b4fc; --c-text: #86efac; --c-list: #67e8f9; --c-media: #d8b4fe; --c-form: #fdba74;
+      --c-table: #fcd34d; --c-meta: #a8a29e; --c-id: #fdba74; --flash: rgba(255, 193, 7, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --primary: #bdc2ff; --on-primary: #1e2987; --primary-container: #36409c; --on-primary-container: #e0e0ff;
+    --secondary-container: #3f3f52; --on-secondary-container: #e2e0f9; --tertiary: #ffb0cd;
+    --surface: #131318; --surface-c-lowest: #0e0e13; --surface-c-low: #1b1b21; --surface-c: #1f1f25;
+    --surface-c-high: #2a292f; --surface-c-highest: #35343a;
+    --on-surface: #e4e1e9; --on-surface-variant: #b5b3be; --outline: #8a8994; --outline-variant: #3f3f48;
+    --success: #8bd8a2; --success-container: #0f4a26; --error: #ffb4ab; --error-container: #93000a;
+    --c-layout: #a5b4fc; --c-text: #86efac; --c-list: #67e8f9; --c-media: #d8b4fe; --c-form: #fdba74;
+    --c-table: #fcd34d; --c-meta: #a8a29e; --c-id: #fdba74; --flash: rgba(255, 193, 7, .3);
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--surface); color: var(--on-surface);
+    font: 14px "Roboto Flex", Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  code, .mono { font-family: "Roboto Mono", ui-monospace, Consolas, monospace; }
+  button { font: inherit; color: inherit; }
+  .icon {
+    font-family: "Material Symbols Rounded"; font-weight: normal; font-style: normal; font-size: 20px; line-height: 1;
+    letter-spacing: normal; text-transform: none; white-space: nowrap; direction: ltr; font-feature-settings: "liga";
+    -webkit-font-smoothing: antialiased; user-select: none; display: inline-block; width: 1em; overflow: hidden; flex-shrink: 0;
+  }
+  .cat-layout { --c: var(--c-layout); } .cat-text { --c: var(--c-text); } .cat-list { --c: var(--c-list); }
+  .cat-media { --c: var(--c-media); } .cat-form { --c: var(--c-form); } .cat-table { --c: var(--c-table); }
+  .cat-meta { --c: var(--c-meta); }
+
+  /* ---------- App bar ---------- */
+  .appbar {
+    display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 16px; flex-shrink: 0;
+    background: var(--surface-c-low); border-bottom: 1px solid var(--outline-variant);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 500; white-space: nowrap; }
+  .brand .logo { width: 32px; height: 32px; border-radius: 9px; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
+  .brand .logo .icon { font-size: 19px; }
+  .file-chip {
+    display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 340px;
+    padding: 6px 12px; border-radius: 8px; font-weight: 500;
+    background: var(--surface-c-high); color: var(--on-surface);
+  }
+  .file-chip .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; animation: pulse 2s infinite; }
+  .dot.static { background: var(--outline); animation: none; }
+  .dot.error { background: var(--error); animation: none; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 6px transparent; } }
+  .grow { flex: 1; }
+
+  .seg { display: inline-flex; border: 1px solid var(--outline-variant); border-radius: 99px; overflow: hidden; flex-shrink: 0; }
+  .seg button {
+    display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border: none; cursor: pointer;
+    background: transparent; color: var(--on-surface-variant); font-weight: 500; font-size: 13px;
+  }
+  .seg button + button { border-left: 1px solid var(--outline-variant); }
+  .seg button .icon { font-size: 18px; }
+  .seg button:hover { background: color-mix(in srgb, var(--on-surface) 6%, transparent); }
+  .seg button.on { background: var(--secondary-container); color: var(--on-secondary-container); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 22px;
+    border-radius: 99px; border: none; cursor: pointer; font-weight: 500; white-space: nowrap; position: relative; overflow: hidden;
+  }
+  .btn::after { content: ""; position: absolute; inset: 0; background: currentColor; opacity: 0; transition: opacity .15s; }
+  .btn:hover::after { opacity: .08; }
+  .btn.filled { background: var(--primary); color: var(--on-primary); }
+  .btn.outlined { background: transparent; border: 1px solid var(--outline); color: var(--primary); }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 50%; border: none; background: transparent; cursor: pointer;
+    display: inline-grid; place-items: center; color: var(--on-surface-variant); flex-shrink: 0;
+  }
+  .icon-btn:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+  .icon-btn.sm { width: 30px; height: 30px; }
+  .icon-btn.sm .icon { font-size: 18px; }
+
+  /* ---------- Layout ---------- */
+  main { flex: 1; display: flex; min-height: 0; position: relative; }
+  .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  #treePane { flex: 1; position: relative; }
+  #detailPane { width: 420px; background: var(--surface-c-low); border-left: 1px solid var(--outline-variant); }
+  .splitter { width: 6px; margin: 0 -3px; cursor: col-resize; z-index: 5; }
+  .splitter:hover, .splitter.dragging { background: color-mix(in srgb, var(--primary) 35%, transparent); }
+
+  .toolbar { display: flex; align-items: center; gap: 4px; padding: 10px 12px 10px 16px; }
+  .search {
+    flex: 1; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 6px 0 14px; border-radius: 99px;
+    background: var(--surface-c-high); color: var(--on-surface-variant); border: 2px solid transparent; transition: border-color .15s;
+    max-width: 560px; margin-right: auto;
+  }
+  .search:focus-within { border-color: var(--primary); }
+  .search input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font: 13px "Roboto Mono", monospace; color: var(--on-surface); }
+  .search input::placeholder { font-family: "Roboto Flex", sans-serif; color: var(--on-surface-variant); }
+  .search .count { font-size: 12px; white-space: nowrap; }
+  .search .count.bad { color: var(--error); }
+
+  #viewport { flex: 1; overflow: auto; position: relative; }
+  #viewport.panning { cursor: grabbing; }
+
+  /* ---------- View 1: nested containers ---------- */
+  #canvas.boxes { padding: 4px 16px 48px; min-width: 480px; }
+  .box {
+    --c: var(--c-layout);
+    border: 1px solid color-mix(in srgb, var(--c) 24%, transparent); border-radius: 12px;
+    background: color-mix(in srgb, var(--c) 4%, var(--surface-c-lowest));
+    transition: border-color .12s, box-shadow .12s, background .12s;
+    min-width: 0;
+  }
+  .box > .head {
+    display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 5px 8px 5px 12px;
+    border-radius: 11px; cursor: pointer; user-select: none; white-space: nowrap; min-width: 0;
+  }
+  .box:not(.leaf):not(.collapsed) > .head { border-radius: 11px 11px 0 0; }
+  .box > .body { display: flex; flex-direction: column; gap: 8px; padding: 2px 10px 10px; }
+  .box .run { display: flex; flex-wrap: wrap; gap: 8px; }
+  .box .run > .box { max-width: 100%; }
+  .box:has(> .head:hover) { border-color: var(--c); }
+  .box:has(> .head:hover) > .head { background: color-mix(in srgb, var(--c) 8%, transparent); }
+  .box > .head .fold { opacity: 0; }
+  .box:has(> .head:hover) > .head .fold, .box > .head .fold.closed { opacity: 1; }
+
+  .tag { font: 600 12.5px "Roboto Mono", monospace; color: var(--c); }
+  .id { font: 500 12px "Roboto Mono", monospace; color: var(--c-id); }
+  .cls { font: 12px "Roboto Mono", monospace; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; }
+  .attr { font: 11.5px "Roboto Mono", monospace; color: var(--on-surface-variant); opacity: .75; overflow: hidden; text-overflow: ellipsis; }
+  .txt { color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .txt::before { content: "“"; } .txt::after { content: "”"; }
+  .fold {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 2px; height: 24px; padding: 0 4px;
+    border: none; border-radius: 99px; background: transparent; color: var(--on-surface-variant); cursor: pointer; font-size: 11.5px;
+    transition: opacity .12s;
+  }
+  .fold:hover { background: color-mix(in srgb, var(--on-surface) 10%, transparent); color: var(--on-surface); }
+  .fold.closed { padding: 0 4px 0 10px; background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c); font-weight: 500; }
+
+  .box.selected { border-color: var(--primary); box-shadow: 0 0 0 1.5px var(--primary); background: color-mix(in srgb, var(--primary) 7%, var(--surface-c-lowest)); }
+  .box.selected > .head { background: var(--primary-container) !important; }
+  .box.selected > .head .tag { color: var(--on-primary-container); }
+  .box.match { outline: 2px dashed var(--tertiary); outline-offset: 2px; }
+  .box.flash > .head { animation: flash 2.2s ease-out; }
+  @keyframes flash { 0%, 30% { background: var(--flash); } 100% { background: transparent; } }
+
+  /* ---------- View 2: flow chart ---------- */
+  #canvas.flow { display: flex; justify-content: center; width: max-content; min-width: 100%; padding: 32px 32px 64px; }
+  #canvas.flow ul { display: flex; justify-content: center; padding: 22px 0 0; margin: 0; position: relative; }
+  #canvas.flow > ul { padding-top: 0; }
+  #canvas.flow li { list-style: none; position: relative; padding: 22px 5px 0; display: flex; flex-direction: column; align-items: center; }
+  #canvas.flow li::before, #canvas.flow li::after {
+    content: ""; position: absolute; top: 0; right: 50%; width: 50%; height: 22px; border-top: 1.5px solid var(--outline-variant);
+  }
+  #canvas.flow li::after { right: auto; left: 50%; border-left: 1.5px solid var(--outline-variant); }
+  #canvas.flow li:only-child::before, #canvas.flow li:only-child::after { display: none; }
+  #canvas.flow li:only-child { padding-top: 0; }
+  #canvas.flow li:first-child::before, #canvas.flow li:last-child::after { border: 0 none; }
+  #canvas.flow li:last-child::before { border-right: 1.5px solid var(--outline-variant); border-radius: 0 10px 0 0; }
+  #canvas.flow li:first-child::after { border-radius: 10px 0 0 0; }
+  #canvas.flow ul ul::before { content: ""; position: absolute; top: 0; left: 50%; height: 22px; border-left: 1.5px solid var(--outline-variant); }
+  .fnode {
+    --c: var(--c-layout); position: relative; display: flex; flex-direction: column; align-items: center;
+    padding: 7px 12px; border-radius: 10px; cursor: pointer; user-select: none; white-space: nowrap;
+    background: var(--surface-c-lowest); border: 1.5px solid color-mix(in srgb, var(--c) 40%, transparent);
+    box-shadow: var(--shadow-1); transition: border-color .12s, transform .12s;
+  }
+  .fnode:hover { border-color: var(--c); transform: translateY(-1px); }
+  .fnode small { font: 11px "Roboto Mono", monospace; color: var(--on-surface-variant); max-width: 150px; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .fnode small.id { color: var(--c-id); }
+  .fnode small.t { font-family: "Roboto Flex", sans-serif; font-style: italic; }
+  .fnode.has-kids { padding-bottom: 12px; }
+  .fnode .fold:not(.closed) { opacity: 0; }
+  .fnode:hover .fold { opacity: 1; }
+  .fnode .fold {
+    position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); margin: 0; height: 19px; min-width: 19px;
+    padding: 0 5px; justify-content: center; font-size: 11px; font-weight: 600; z-index: 1;
+    background: var(--surface-c-lowest); border: 1.5px solid color-mix(in srgb, var(--c) 40%, transparent); color: var(--c);
+  }
+  .fnode .fold .icon { font-size: 14px; }
+  .fnode .fold.closed { padding: 0 7px; background: var(--c); color: var(--surface-c-lowest); border-color: var(--c); }
+  .fnode.selected { background: var(--primary-container); border-color: var(--primary); box-shadow: 0 0 0 1.5px var(--primary); }
+  .fnode.selected .tag { color: var(--on-primary-container); }
+  .fnode.match { outline: 2px dashed var(--tertiary); outline-offset: 3px; }
+  .fnode.flash { animation: flash 2.2s ease-out; }
+  .fnode.selected.flash { animation: none; }
+
+  .zoom {
+    position: absolute; right: 20px; bottom: 58px; display: flex; align-items: center; gap: 2px; padding: 3px;
+    border-radius: 99px; background: var(--surface-c-high); box-shadow: var(--shadow-1); z-index: 4;
+  }
+  .zoom span { font-size: 12px; min-width: 44px; text-align: center; color: var(--on-surface-variant); font-variant-numeric: tabular-nums; }
+
+  /* ---------- Bottom bar ---------- */
+  .bottombar {
+    display: flex; align-items: center; gap: 12px; min-height: 38px; padding: 4px 16px;
+    border-top: 1px solid var(--outline-variant); background: var(--surface-c-low); flex-shrink: 0;
+  }
+  .crumbs { display: flex; align-items: center; gap: 1px; overflow-x: auto; white-space: nowrap; font: 12px "Roboto Mono", monospace; flex: 1; min-width: 0; scrollbar-width: none; }
+  .crumbs .crumb { padding: 3px 7px; border-radius: 6px; cursor: pointer; color: var(--on-surface-variant); }
+  .crumbs .crumb:hover { background: var(--surface-c-high); color: var(--on-surface); }
+  .crumbs .crumb.last { color: var(--primary); font-weight: 600; }
+  .crumbs .sep { color: var(--outline); font-size: 15px; }
+  .crumbs .hint { color: var(--on-surface-variant); font-family: "Roboto Flex", sans-serif; }
+  .legend { display: flex; gap: 12px; font-size: 11.5px; color: var(--on-surface-variant); flex-shrink: 0; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { width: 9px; height: 9px; border-radius: 3px; background: var(--c); }
+  kbd { font: 11px "Roboto Mono", monospace; padding: 1px 5px; border-radius: 4px; background: var(--surface-c-highest); border: 1px solid var(--outline-variant); border-bottom-width: 2px; }
+
+  /* ---------- Detail pane ---------- */
+  #details { flex: 1; overflow: auto; padding: 16px 16px 48px; }
+  .empty { text-align: center; color: var(--on-surface-variant); padding: 56px 16px; line-height: 1.6; }
+  .empty .icon { font-size: 44px; width: auto; color: var(--outline); }
+  .empty h3 { margin: 10px 0 4px; font-weight: 500; font-size: 16px; color: var(--on-surface); }
+  .empty ul { list-style: none; padding: 0; margin: 20px auto 0; text-align: left; display: inline-flex; flex-direction: column; gap: 8px; font-size: 13px; }
+
+  .d-head { margin-bottom: 14px; }
+  .d-title { font: 500 14px/1.5 "Roboto Mono", monospace; word-break: break-word; }
+  .d-title .tag { font-size: 14px; }
+  .d-title .an { color: var(--on-surface-variant); }
+  .d-title .av { color: var(--c-id); }
+  .d-sub { margin-top: 4px; font-size: 12.5px; color: var(--on-surface-variant); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+  .link { color: var(--primary); cursor: pointer; font-weight: 500; }
+  .link:hover { text-decoration: underline; }
+  .link.mono { font: 500 12px "Roboto Mono", monospace; }
+
+  .d-tabs { display: flex; margin-bottom: 12px; }
+  .d-tabs .seg { width: 100%; }
+  .d-tabs .seg button { flex: 1; justify-content: center; }
+
+  .sel {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px 9px 12px; border-radius: 10px; cursor: pointer;
+    background: var(--surface-c-lowest); border: 1px solid var(--outline-variant); margin-bottom: 6px; transition: border-color .12s;
+  }
+  .sel:hover { border-color: var(--outline); }
+  .sel:hover .copy { opacity: 1; }
+  .sel .main { flex: 1; min-width: 0; }
+  .sel .lbl { display: block; font-size: 11px; color: var(--on-surface-variant); margin-bottom: 2px; }
+  .sel code { font-size: 12.5px; line-height: 1.5; word-break: break-all; white-space: pre-wrap; }
+  .sel.best { border-color: color-mix(in srgb, var(--primary) 55%, transparent); background: color-mix(in srgb, var(--primary-container) 45%, var(--surface-c-lowest)); }
+  .sel.best .lbl { color: var(--primary); font-weight: 600; }
+  .copy { opacity: .3; font-size: 18px; color: var(--on-surface-variant); transition: opacity .12s; }
+  .pill { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; background: var(--surface-c-high); color: var(--on-surface-variant); }
+  .pill.ok { background: var(--success-container); color: var(--success); }
+  .pill.bad { background: var(--error-container); color: var(--error); }
+  .more {
+    display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; height: 36px; margin-top: 4px;
+    border: none; border-radius: 10px; background: transparent; color: var(--primary); cursor: pointer; font-weight: 500; font-size: 13px;
+  }
+  .more:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+
+  details.extra { margin-top: 16px; border-top: 1px solid var(--outline-variant); padding-top: 8px; }
+  details.extra summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--on-surface-variant); padding: 6px 0; }
+  details.extra summary::-webkit-details-marker { display: none; }
+  details.extra summary .icon { font-size: 18px; transition: transform .15s; }
+  details.extra[open] summary .icon { transform: rotate(90deg); }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 6px 0 0; font: 12px "Roboto Mono", monospace; }
+  .kv dt { color: var(--on-surface-variant); }
+  .kv dd { margin: 0; color: var(--c-id); word-break: break-all; }
+
+  .el-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .el-chip {
+    display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 2px 0 10px; border-radius: 8px; cursor: pointer;
+    background: var(--surface-c-lowest); border: 1px solid var(--outline-variant); font: 12px "Roboto Mono", monospace;
+  }
+  .el-chip:hover { border-color: var(--outline); }
+  .el-chip .x { width: 22px; height: 22px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: grid; place-items: center; color: var(--on-surface-variant); }
+  .el-chip .x:hover { background: var(--surface-c-high); }
+  .el-chip .x .icon { font-size: 15px; }
+
+  /* ---------- Welcome ---------- */
+  #welcome {
+    position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 10; background: var(--surface);
+    background-image: radial-gradient(circle at 20% 15%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 45%),
+                      radial-gradient(circle at 85% 85%, color-mix(in srgb, var(--tertiary) 10%, transparent), transparent 45%);
+  }
+  #welcome.hidden { display: none; }
+  .welcome-card { max-width: 500px; width: 100%; text-align: center; padding: 40px 32px; border-radius: 28px; background: var(--surface-c-low); box-shadow: var(--shadow-3); }
+  .welcome-card .big { width: 76px; height: 76px; border-radius: 22px; margin: 0 auto 18px; display: grid; place-items: center; background: var(--primary-container); color: var(--on-primary-container); }
+  .welcome-card .big .icon { font-size: 40px; }
+  .welcome-card h1 { font-size: 26px; font-weight: 500; margin: 0 0 8px; }
+  .welcome-card p { color: var(--on-surface-variant); line-height: 1.6; margin: 0 0 24px; }
+  .welcome-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .welcome-card .drop { margin-top: 22px; font-size: 13px; color: var(--on-surface-variant); }
+  .warn { margin-top: 18px; padding: 10px 14px; border-radius: 12px; font-size: 13px; text-align: left; background: var(--error-container); color: var(--error); display: none; gap: 8px; }
+  .warn.show { display: flex; }
+
+  #dropOverlay {
+    position: fixed; inset: 12px; border-radius: 24px; border: 3px dashed var(--primary); z-index: 50; pointer-events: none;
+    background: color-mix(in srgb, var(--primary) 12%, var(--surface) 80%); display: none; place-items: center;
+    font-size: 20px; font-weight: 500; color: var(--primary); text-align: center;
+  }
+  body.dragging #dropOverlay { display: grid; }
+
+  #snackbar {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 30px); opacity: 0; z-index: 100; pointer-events: none;
+    display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 32px); padding: 11px 18px; border-radius: 8px;
+    background: var(--on-surface); color: var(--surface); box-shadow: var(--shadow-3); transition: all .2s;
+  }
+  #snackbar.show { transform: translate(-50%, 0); opacity: 1; }
+  #snackbar code { color: var(--primary-container); }
+
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
+  ::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: 99px; border: 3px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background-color: var(--outline); }
+  ::-webkit-scrollbar-corner { background: transparent; }
+
+  @media (max-width: 900px) {
+    main { flex-direction: column; }
+    #detailPane { width: auto !important; height: 45%; border-left: none; border-top: 1px solid var(--outline-variant); }
+    .splitter, .legend, .brand span:last-child { display: none; }
+    .seg button .lbl { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <div class="logo"><span class="icon">account_tree</span></div>
+    <span>DOM Visualizer</span>
+  </div>
+  <div class="file-chip" id="fileChip" hidden>
+    <span class="dot" id="liveDot"></span>
+    <span class="name" id="fileName"></span>
+  </div>
+  <div class="grow"></div>
+  <div class="seg" id="viewSeg" hidden>
+    <button data-view="boxes" title="Nested containers – shows what is inside what"><span class="icon">view_agenda</span><span class="lbl">Containers</span></button>
+    <button data-view="flow" title="Flow chart – shows parent/child links"><span class="icon">account_tree</span><span class="lbl">Flowchart</span></button>
+  </div>
+  <button class="icon-btn" id="openBtn2" title="Open another file (Ctrl+O)" hidden><span class="icon">folder_open</span></button>
+  <button class="icon-btn" id="themeBtn" title="Toggle dark / light"><span class="icon">dark_mode</span></button>
+</header>
+
+<main>
+  <section class="pane" id="treePane">
+    <div class="toolbar">
+      <label class="search" title="Type a CSS selector to highlight what it matches. Enter selects the matches.">
+        <span class="icon">search</span>
+        <input id="selectorInput" placeholder="Try a CSS selector, e.g.  .card > p" spellcheck="false" autocomplete="off">
+        <span class="count" id="matchCount"></span>
+        <button class="icon-btn sm" id="selectMatchesBtn" title="Select all matches (Enter)" hidden><span class="icon">done_all</span></button>
+      </label>
+      <button class="icon-btn" id="expandAllBtn" title="Expand everything"><span class="icon">unfold_more</span></button>
+      <button class="icon-btn" id="collapseAllBtn" title="Collapse everything"><span class="icon">unfold_less</span></button>
+    </div>
+    <div id="viewport">
+      <div id="canvas"></div>
+    </div>
+    <div class="bottombar">
+      <div class="crumbs" id="crumbs"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="zoom" id="zoomCtl" hidden>
+      <button class="icon-btn sm" id="zoomOut" title="Zoom out (Ctrl + scroll)"><span class="icon">remove</span></button>
+      <span id="zoomLabel">100%</span>
+      <button class="icon-btn sm" id="zoomIn" title="Zoom in (Ctrl + scroll)"><span class="icon">add</span></button>
+      <button class="icon-btn sm" id="zoomFit" title="Fit to width"><span class="icon">fit_screen</span></button>
+    </div>
+  </section>
+
+  <div class="splitter" id="splitter"></div>
+
+  <aside class="pane" id="detailPane">
+    <div id="details"></div>
+  </aside>
+
+  <div id="welcome">
+    <div class="welcome-card">
+      <div class="big"><span class="icon">account_tree</span></div>
+      <h1>DOM Visualizer</h1>
+      <p>Open an HTML file to see how its elements are nested. Keep this tab open while you work – it updates every time you save.</p>
+      <div class="welcome-actions">
+        <button class="btn filled" id="openBtn"><span class="icon">folder_open</span>Open HTML file</button>
+        <button class="btn outlined" id="reopenBtn" hidden><span class="icon">history</span><span id="reopenLabel">Reopen last file</span></button>
+      </div>
+      <div class="drop">…or drop an .html file anywhere on this page</div>
+      <div class="warn" id="compatWarn">
+        <span class="icon">warning</span>
+        <span>This browser can't watch files, so the view won't update when you save. Use <b>Chrome</b> or <b>Edge</b> for live updates.</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<input type="file" id="fileInput" accept=".html,.htm,text/html" hidden>
+<div id="dropOverlay"><div><span class="icon" style="font-size:40px;width:auto">upload_file</span><br>Drop HTML file</div></div>
+<div id="snackbar"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* =========================================================
+     State
+     ========================================================= */
+  const state = {
+    handle: null,          // FileSystemFileHandle (live mode)
+    fileName: "",
+    lastModified: 0,
+    lastText: null,
+    doc: null,             // parsed Document
+    byPath: new Map(),     // path -> element   (path = element indices, e.g. "0/1/2")
+    pathOf: new Map(),     // element -> path
+    sigs: new Map(),       // path -> signature (for change detection)
+    collapsed: new Set(),  // paths
+    selected: [],          // ordered array of paths
+    anchor: null,          // path for shift-range selection
+    matches: new Set(),    // paths matching the search selector
+    view: "boxes",
+    zoom: 1,
+    tab: "css",
+    showMore: false,
+    pollTimer: null,
+  };
+  const nodeByPath = new Map();   // path -> rendered .box / .fnode
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const canvas = $("#canvas"), viewport = $("#viewport"), detailsEl = $("#details");
+  const supportsFSA = "showOpenFilePicker" in window;
+
+  /* =========================================================
+     Helpers
+     ========================================================= */
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const cssEsc = s => (window.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/[^\w-]/g, "\\$&");
+  const jsStr = s => "'" + String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n") + "'";
+  const attrVal = v => '"' + String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+  const truncate = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+  const plural = (n, w, many = w + "s") => `${n} ${n === 1 ? w : many}`;
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+  };
+
+  const CATS = {
+    meta:   ["Head", "head meta link title script style base noscript template"],
+    text:   ["Text", "h1 h2 h3 h4 h5 h6 p span a strong em b i u s small mark code pre blockquote br hr q cite abbr time sub sup del ins kbd"],
+    list:   ["List", "ul ol li dl dt dd menu"],
+    media:  ["Media", "img video audio picture source svg canvas iframe figure figcaption track embed object"],
+    form:   ["Form", "form input button select option optgroup textarea fieldset legend label output datalist progress meter"],
+    table:  ["Table", "table thead tbody tfoot tr td th caption colgroup col"],
+  };
+  const CAT_OF = new Map();
+  for (const [k, [, tags]] of Object.entries(CATS)) for (const t of tags.split(" ")) CAT_OF.set(t, k);
+  const catOf = el => CAT_OF.get(el.localName) || "layout";
+
+  // Elements that sit side by side in the browser → shown side by side in the container view
+  const INLINE = new Set("a span strong em b i u s small mark code img input button select textarea label br abbr time q sub sup kbd del ins svg".split(" "));
+  const NO_TEXT = new Set(["script", "style", "noscript", "template"]);
+  const KEY_ATTR = {
+    a: ["href"], img: ["src", "alt"], input: ["type", "name"], link: ["rel", "href"], script: ["src"], meta: ["name", "charset", "property"],
+    button: ["type"], form: ["action"], iframe: ["src"], source: ["src"], label: ["for"], select: ["name"], textarea: ["name"],
+    video: ["src"], audio: ["src"], html: ["lang"],
+  };
+  function keyAttr(el) {
+    for (const a of KEY_ATTR[el.localName] || []) if (el.hasAttribute(a)) return [a, el.getAttribute(a)];
+    return null;
+  }
+  const ownText = el => [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.nodeValue).join(" ").trim().replace(/\s+/g, " ");
+
+  function snack(html, ms = 1800) {
+    const s = $("#snackbar");
+    s.innerHTML = html;
+    s.classList.add("show");
+    clearTimeout(snack.t);
+    snack.t = setTimeout(() => s.classList.remove("show"), ms);
+  }
+
+  async function copy(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); ta.remove();
+    }
+    snack(`<span class="icon">content_copy</span>Copied <code>${esc(truncate(text.replace(/\s+/g, " "), 70))}</code>`);
+  }
+
+  /* ---------- tiny IndexedDB key/value store for remembering the last file ---------- */
+  const kv = {
+    open() {
+      return new Promise((res, rej) => {
+        const r = indexedDB.open("dom-visualizer", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("kv");
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async get(k) {
+      const db = await this.open();
+      return new Promise((res, rej) => {
+        const q = db.transaction("kv").objectStore("kv").get(k);
+        q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
+      });
+    },
+    async set(k, v) {
+      const db = await this.open();
+      return new Promise((res, rej) => {
+        const t = db.transaction("kv", "readwrite");
+        t.objectStore("kv").put(v, k);
+        t.oncomplete = () => res(); t.onerror = () => rej(t.error);
+      });
+    },
+  };
+
+  /* =========================================================
+     File loading & live watching
+     ========================================================= */
+  async function pickFile() {
+    if (!supportsFSA) { $("#fileInput").click(); return; }
+    try {
+      const [h] = await window.showOpenFilePicker({
+        types: [{ description: "HTML files", accept: { "text/html": [".html", ".htm"] } }],
+        multiple: false,
+      });
+      await useHandle(h);
+    } catch (e) {
+      if (e.name !== "AbortError") { console.error(e); $("#fileInput").click(); }
+    }
+  }
+
+  function resetForNewFile() {
+    stopWatching();
+    state.lastModified = 0;
+    state.lastText = null;
+    state.sigs = new Map();
+    state.collapsed = null;   // null → choose defaults on first render
+    state.selected = [];
+    state.anchor = null;
+  }
+
+  async function useHandle(h) {
+    resetForNewFile();
+    state.handle = h;
+    try { await kv.set("lastHandle", h); } catch { /* storage unavailable */ }
+    await poll(true);
+    state.pollTimer = setInterval(() => poll(false), 500);
+  }
+
+  async function useStaticFile(file) {
+    resetForNewFile();
+    state.handle = null;
+    state.fileName = file.name;
+    loadText(await file.text(), true);
+    setLive("static", "Snapshot only – this browser can't watch the file for changes");
+    snack(`<span class="icon">info</span>Opened as a snapshot. Use Chrome/Edge for live updates.`, 4000);
+  }
+
+  function stopWatching() {
+    clearInterval(state.pollTimer);
+    state.pollTimer = null;
+  }
+
+  let polling = false;
+  async function poll(first) {
+    if (!state.handle || polling) return;
+    polling = true;
+    try {
+      const file = await state.handle.getFile();
+      if (first || file.lastModified !== state.lastModified) {
+        state.lastModified = file.lastModified;
+        const text = await file.text();
+        state.fileName = file.name;
+        if (text !== state.lastText) loadText(text, first);
+      }
+      setLive("live", "Live – updates automatically when you save");
+    } catch (e) {
+      // The file may be mid-save or briefly missing; keep trying.
+      if (first) snack(`<span class="icon">error</span>Couldn't read the file: ${esc(e.message)}`, 4000);
+      setLive("error", "File currently unavailable – retrying…");
+    } finally {
+      polling = false;
+    }
+  }
+
+  function setLive(kind, text) {
+    $("#liveDot").className = "dot" + (kind === "live" ? "" : " " + kind);
+    $("#fileChip").title = `${state.fileName}\n${text}`;
+  }
+
+  /* =========================================================
+     Parsing / indexing
+     ========================================================= */
+  function loadText(text, first) {
+    state.lastText = text;
+    const doc = new DOMParser().parseFromString(text, "text/html");
+    const prevSigs = state.sigs;
+    state.doc = doc;
+    state.byPath = new Map();
+    state.pathOf = new Map();
+    state.sigs = new Map();
+
+    const walk = (el, path) => {
+      state.byPath.set(path, el);
+      state.pathOf.set(el, path);
+      state.sigs.set(path, signature(el));
+      [...el.children].forEach((c, i) => walk(c, path + "/" + i));
+    };
+    walk(doc.documentElement, "0");
+
+    if (!state.collapsed) state.collapsed = defaultCollapsed();
+    state.selected = state.selected.filter(p => state.byPath.has(p));
+
+    // What changed since the last save?
+    const changed = [];
+    if (!first && prevSigs.size) {
+      for (const [p, sig] of state.sigs) if (prevSigs.get(p) !== sig) changed.push(p);
+      if (changed.length <= 12) for (const p of changed) expandAncestors(p);
+    }
+
+    $("#welcome").classList.add("hidden");
+    $("#fileChip").hidden = false;
+    $("#viewSeg").hidden = false;
+    $("#openBtn2").hidden = false;
+    $("#fileName").textContent = state.fileName;
+    document.title = `${state.fileName} · DOM Visualizer`;
+
+    applySearch(false);
+    render();
+    renderDetails();
+
+    if (first && state.view === "flow" && canvas.scrollWidth > viewport.clientWidth) fitZoom();
+
+    if (changed.length) {
+      for (const p of changed) nodeByPath.get(p)?.classList.add("flash");
+      if (changed.length <= 12) nodeByPath.get(changed[0])?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+      snack(`<span class="icon">sync</span>Updated · ${plural(changed.length, "element")} changed`, 1400);
+    } else if (!first) {
+      snack(`<span class="icon">sync</span>Updated`, 1000);
+    }
+  }
+
+  function signature(el) {
+    let s = el.localName;
+    for (const a of el.attributes) s += ` ${a.name}=${a.value}`;
+    return s + "|" + ownText(el) + "|" + el.children.length;
+  }
+
+  function defaultCollapsed() {
+    const set = new Set();
+    const big = state.byPath.size > 300;
+    for (const [p, el] of state.byPath) {
+      if (!el.children.length) continue;
+      if (el.localName === "head" || el.localName === "svg" || (big && p.split("/").length >= 6)) set.add(p);
+    }
+    return set;
+  }
+
+  function expandAncestors(path) {
+    let changed = false;
+    const parts = path.split("/");
+    for (let i = 1; i < parts.length; i++) {
+      const p = parts.slice(0, i).join("/");
+      if (state.collapsed.delete(p)) changed = true;
+    }
+    return changed;
+  }
+
+  /* =========================================================
+     Rendering – shared
+     ========================================================= */
+  function render() {
+    if (!state.doc) return;
+    const st = viewport.scrollTop, sl = viewport.scrollLeft;
+    nodeByPath.clear();
+    canvas.className = state.view;
+    if (state.view === "boxes") {
+      canvas.style.zoom = "";
+      canvas.replaceChildren(boxNode(state.doc.documentElement, "0"));
+    } else {
+      const ul = document.createElement("ul");
+      ul.appendChild(flowNode(state.doc.documentElement, "0"));
+      canvas.replaceChildren(ul);
+      canvas.style.zoom = state.zoom;
+    }
+    viewport.scrollTop = st; viewport.scrollLeft = sl;
+    $("#zoomCtl").hidden = state.view !== "flow";
+    document.querySelectorAll("#viewSeg button").forEach(b => b.classList.toggle("on", b.dataset.view === state.view));
+    refreshClasses();
+    renderLegend();
+  }
+
+  function refreshClasses() {
+    const sel = new Set(state.selected);
+    for (const [p, n] of nodeByPath) {
+      n.classList.toggle("selected", sel.has(p));
+      n.classList.toggle("match", state.matches.has(p));
+    }
+  }
+
+  function foldHtml(count, collapsed) {
+    return collapsed
+      ? `<button class="fold closed" title="Expand (Alt+click: expand everything inside)"><span>${count} inside</span><span class="icon">expand_more</span></button>`
+      : `<button class="fold" title="Collapse (Alt+click: collapse everything inside)"><span class="icon">expand_less</span></button>`;
+  }
+
+  /* ---------- View 1: nested containers ---------- */
+  function boxNode(el, path) {
+    const kids = [...el.children];
+    const collapsed = kids.length > 0 && state.collapsed.has(path);
+    const box = document.createElement("div");
+    box.className = `box cat-${catOf(el)}${kids.length ? "" : " leaf"}${collapsed ? " collapsed" : ""}`;
+    box.dataset.path = path;
+
+    let h = `<span class="tag">${esc(el.localName)}</span>`;
+    if (el.id) h += `<span class="id">#${esc(el.id)}</span>`;
+    if (el.classList.length) h += `<span class="cls">${[...el.classList].map(c => "." + esc(c)).join(" ")}</span>`;
+    const ka = keyAttr(el);
+    if (ka) h += `<span class="attr">${esc(ka[0])}="${esc(truncate(ka[1], 36))}"</span>`;
+    const t = NO_TEXT.has(el.localName) ? "" : ownText(el);
+    if (t) h += `<span class="txt">${esc(truncate(t, 90))}</span>`;
+    if (kids.length) h += foldHtml(kids.length, collapsed);
+
+    const head = document.createElement("div");
+    head.className = "head";
+    head.innerHTML = h;
+    box.appendChild(head);
+    nodeByPath.set(path, box);
+
+    if (kids.length && !collapsed) {
+      const body = document.createElement("div");
+      body.className = "body";
+      let run = null;
+      kids.forEach((k, i) => {
+        const child = boxNode(k, path + "/" + i);
+        if (INLINE.has(k.localName)) {
+          if (!run) { run = document.createElement("div"); run.className = "run"; body.appendChild(run); }
+          run.appendChild(child);
+        } else {
+          run = null;
+          body.appendChild(child);
+        }
+      });
+      box.appendChild(body);
+    }
+    return box;
+  }
+
+  /* ---------- View 2: flow chart ---------- */
+  function flowNode(el, path) {
+    const kids = [...el.children];
+    const collapsed = kids.length > 0 && state.collapsed.has(path);
+    const li = document.createElement("li");
+    const n = document.createElement("div");
+    n.className = `fnode cat-${catOf(el)}${kids.length ? " has-kids" : ""}`;
+    n.dataset.path = path;
+
+    let h = `<span class="tag">${esc(el.localName)}</span>`;
+    const t = NO_TEXT.has(el.localName) ? "" : ownText(el);
+    if (el.id) h += `<small class="id">#${esc(el.id)}</small>`;
+    else if (el.classList.length) h += `<small>.${esc([...el.classList].join("."))}</small>`;
+    else if (t) h += `<small class="t">“${esc(truncate(t, 18))}”</small>`;
+    if (kids.length) {
+      h += collapsed
+        ? `<button class="fold closed" title="Expand">+${kids.length}</button>`
+        : `<button class="fold" title="Collapse"><span class="icon">remove</span></button>`;
+    }
+    n.innerHTML = h;
+    li.appendChild(n);
+    nodeByPath.set(path, n);
+
+    if (kids.length && !collapsed) {
+      const ul = document.createElement("ul");
+      kids.forEach((k, i) => ul.appendChild(flowNode(k, path + "/" + i)));
+      li.appendChild(ul);
+    }
+    return li;
+  }
+
+  function setZoom(z) {
+    state.zoom = Math.min(2, Math.max(0.2, z));
+    canvas.style.zoom = state.zoom;
+    $("#zoomLabel").textContent = Math.round(state.zoom * 100) + "%";
+  }
+  function fitZoom() {
+    canvas.style.zoom = 1;
+    const w = canvas.scrollWidth;
+    setZoom(Math.min(1, (viewport.clientWidth - 8) / w));
+    viewport.scrollLeft = 0;
+  }
+
+  function renderLegend() {
+    const present = new Set([...state.byPath.values()].map(catOf));
+    const all = [["layout", "Layout"], ...Object.entries(CATS).map(([k, [label]]) => [k, label])];
+    $("#legend").innerHTML = all.filter(([k]) => present.has(k))
+      .map(([k, label]) => `<span class="cat-${k}"><i></i>${label}</span>`).join("");
+  }
+
+  /* =========================================================
+     Interaction
+     ========================================================= */
+  let panMoved = false;
+
+  canvas.addEventListener("click", e => {
+    const node = e.target.closest("[data-path]");
+    if (!node) return;
+    const path = node.dataset.path;
+    if (e.target.closest(".fold")) { toggleCollapse(path, e.altKey); return; }
+
+    if (e.shiftKey && state.anchor) {
+      selectRange(state.anchor, path, e.ctrlKey || e.metaKey);
+    } else if (e.ctrlKey || e.metaKey) {
+      const i = state.selected.indexOf(path);
+      if (i >= 0) state.selected.splice(i, 1); else state.selected.push(path);
+      state.anchor = path;
+    } else {
+      state.selected = (state.selected.length === 1 && state.selected[0] === path) ? [] : [path];
+      state.anchor = path;
+    }
+    state.showMore = false;
+    onSelectionChange();
+  });
+  canvas.addEventListener("dblclick", e => {
+    const node = e.target.closest("[data-path]");
+    if (node && !e.target.closest(".fold") && state.byPath.get(node.dataset.path).children.length) toggleCollapse(node.dataset.path);
+  });
+  viewport.addEventListener("click", e => {
+    // Clicking empty space clears the selection
+    if (!e.target.closest("[data-path]") && !panMoved && state.selected.length) { state.selected = []; onSelectionChange(); }
+  });
+
+  function toggleCollapse(path, deep) {
+    const open = state.collapsed.has(path);
+    const targets = deep
+      ? [...state.byPath.keys()].filter(p => (p === path || p.startsWith(path + "/")) && state.byPath.get(p).children.length)
+      : [path];
+    for (const p of targets) { if (open) state.collapsed.delete(p); else state.collapsed.add(p); }
+    render();
+  }
+
+  function selectRange(a, b, additive) {
+    const order = [...nodeByPath.keys()];   // rendered in document order
+    let i = order.indexOf(a), j = order.indexOf(b);
+    if (i < 0 || j < 0) return;
+    if (i > j) [i, j] = [j, i];
+    const range = order.slice(i, j + 1);
+    state.selected = additive ? [...new Set([...state.selected, ...range])] : range;
+  }
+
+  function onSelectionChange() {
+    refreshClasses();
+    renderDetails();
+  }
+
+  function reveal(path, select) {
+    if (expandAncestors(path)) render();
+    if (select) { state.selected = [path]; state.anchor = path; state.showMore = false; onSelectionChange(); }
+    const n = nodeByPath.get(path);
+    if (n) {
+      n.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+      n.classList.remove("flash"); void n.offsetWidth; n.classList.add("flash");
+    }
+  }
+
+  // Flow chart: drag the background to pan, Ctrl + wheel to zoom
+  (() => {
+    let start = null;
+    viewport.addEventListener("pointerdown", e => {
+      if (state.view !== "flow" || e.button !== 0 || e.target.closest("[data-path]")) return;
+      start = { x: e.clientX, y: e.clientY, sl: viewport.scrollLeft, st: viewport.scrollTop, id: e.pointerId };
+      panMoved = false;
+    });
+    viewport.addEventListener("pointermove", e => {
+      if (!start) return;
+      const dx = e.clientX - start.x, dy = e.clientY - start.y;
+      if (!panMoved && Math.hypot(dx, dy) > 4) {
+        panMoved = true;
+        viewport.setPointerCapture(start.id);
+        viewport.classList.add("panning");
+      }
+      if (panMoved) { viewport.scrollLeft = start.sl - dx; viewport.scrollTop = start.st - dy; }
+    });
+    const end = () => {
+      start = null;
+      viewport.classList.remove("panning");
+      setTimeout(() => { panMoved = false; });
+    };
+    viewport.addEventListener("pointerup", end);
+    viewport.addEventListener("pointercancel", end);
+    viewport.addEventListener("wheel", e => {
+      if (state.view !== "flow" || !(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      setZoom(state.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+    }, { passive: false });
+  })();
+  $("#zoomIn").addEventListener("click", () => setZoom(state.zoom * 1.2));
+  $("#zoomOut").addEventListener("click", () => setZoom(state.zoom / 1.2));
+  $("#zoomFit").addEventListener("click", fitZoom);
+
+  function setView(v) {
+    if (v === state.view) return;
+    state.view = v;
+    store.set("domviz-view", v);
+    render();
+    if (v === "flow" && state.zoom === 1 && canvas.scrollWidth > viewport.clientWidth) fitZoom();
+    const last = state.selected[state.selected.length - 1];
+    if (last) nodeByPath.get(last)?.scrollIntoView({ block: "center", inline: "center" });
+  }
+  document.querySelectorAll("#viewSeg button").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
+
+  /* ---------- Breadcrumbs ---------- */
+  function renderCrumbs() {
+    const c = $("#crumbs");
+    const last = state.selected[state.selected.length - 1];
+    if (!last) {
+      c.innerHTML = `<span class="hint"><kbd>Ctrl</kbd>+click selects several · <kbd>Shift</kbd>+click selects a range · double-click folds</span>`;
+      return;
+    }
+    const parts = last.split("/");
+    let html = "";
+    for (let i = 1; i <= parts.length; i++) {
+      const p = parts.slice(0, i).join("/");
+      if (i > 1) html += `<span class="icon sep">chevron_right</span>`;
+      html += `<span class="crumb${i === parts.length ? " last" : ""}" data-goto="${p}">${esc(shortLabel(state.byPath.get(p)))}</span>`;
+    }
+    c.innerHTML = html;
+    c.scrollLeft = c.scrollWidth;
+  }
+
+  function shortLabel(el) {
+    if (el.id) return el.localName + "#" + el.id;
+    if (el.classList.length) return el.localName + "." + [...el.classList].slice(0, 2).join(".");
+    return el.localName;
+  }
+
+  // Like shortLabel, but adds a bit of text so that e.g. three <a> chips are distinguishable
+  function chipLabel(el) {
+    const t = NO_TEXT.has(el.localName) ? "" : ownText(el);
+    return t ? `${shortLabel(el)} “${truncate(t, 16)}”` : shortLabel(el);
+  }
+
+  document.addEventListener("click", e => {
+    const g = e.target.closest("[data-goto]");
+    if (g && !e.target.closest(".x")) reveal(g.dataset.goto, true);
+  });
+
+  /* =========================================================
+     Selector / accessor generation
+     ========================================================= */
+  function qsa(sel) {
+    try { return [...state.doc.querySelectorAll(sel)]; } catch { return null; }
+  }
+  function count(sel) { const r = qsa(sel); return r ? r.length : -1; }
+  const classSel = el => [...el.classList].map(c => "." + cssEsc(c)).join("");
+  const hasUniqueId = el => el.id && count("#" + cssEsc(el.id)) === 1;
+
+  function uniqueSelector(el) {
+    const d = state.doc;
+    if (el === d.documentElement) return "html";
+    if (el === d.head) return "head";
+    if (el === d.body) return "body";
+    if (hasUniqueId(el)) return "#" + cssEsc(el.id);
+
+    const tag = el.localName, cls = classSel(el);
+    for (const c of [tag, cls, tag + cls]) if (c && count(c) === 1) return c;
+    for (const a of el.attributes) {
+      if (["id", "class", "style"].includes(a.name) || a.value.length > 80) continue;
+      const c = `${tag}[${a.name}=${attrVal(a.value)}]`;
+      if (count(c) === 1) return c;
+    }
+
+    const parts = [];
+    let cur = el;
+    while (cur && cur.nodeType === 1) {
+      if (cur !== el && hasUniqueId(cur)) { parts.unshift("#" + cssEsc(cur.id)); break; }
+      if (cur === d.body || cur === d.head || cur === d.documentElement) { parts.unshift(cur.localName); break; }
+      let part = cur.localName + classSel(cur);
+      const parent = cur.parentElement;
+      if ([...parent.children].filter(s => s.matches(part)).length > 1) {
+        const sameTag = [...parent.children].filter(s => s.localName === cur.localName);
+        part = cur.localName + `:nth-of-type(${sameTag.indexOf(cur) + 1})`;
+      }
+      parts.unshift(part);
+      const r = qsa(parts.join(" > "));
+      if (r && r.length === 1 && r[0] === el) return parts.join(" > ");
+      cur = parent;
+    }
+    return parts.join(" > ");
+  }
+
+  function fullPath(el) {
+    const parts = [];
+    for (let cur = el; cur; cur = cur.parentElement) {
+      const parent = cur.parentElement;
+      const sameTag = parent ? [...parent.children].filter(s => s.localName === cur.localName) : [cur];
+      parts.unshift(sameTag.length > 1 ? `${cur.localName}:nth-of-type(${sameTag.indexOf(cur) + 1})` : cur.localName);
+    }
+    return parts.join(" > ");
+  }
+
+  // Ordered from "most useful" to "exotic"; the panel shows the first few and hides the rest behind "More".
+  function cssSelectors(el) {
+    const out = [];
+    const add = (label, sel, best = false) => {
+      if (!sel || out.some(o => o.sel === sel)) return;
+      const r = qsa(sel);
+      out.push({ label, code: sel, n: r ? r.length : -1, hits: r ? r.includes(el) : false, best });
+    };
+    const tag = el.localName, cls = [...el.classList];
+
+    add("Best – matches only this element", uniqueSelector(el), true);
+    if (el.id) add("By ID", "#" + cssEsc(el.id));
+    for (const c of cls) add("By class", "." + cssEsc(c));
+    if (cls.length) add("Tag + class", tag + classSel(el));
+    add("By tag", tag);
+
+    if (cls.length > 1) add("All classes", classSel(el));
+    for (const a of el.attributes) {
+      if (["id", "class", "style"].includes(a.name)) continue;
+      if (a.value !== "" && a.value.length <= 80) add("By attribute value", `${tag}[${a.name}=${attrVal(a.value)}]`);
+      add("Has attribute", `[${a.name}]`);
+    }
+    const parent = el.parentElement;
+    if (parent) {
+      const pSel = uniqueSelector(parent);
+      const sibs = [...parent.children];
+      const idx = sibs.indexOf(el) + 1;
+      const sameType = sibs.filter(s => s.localName === tag);
+      add("Direct child of parent", `${pSel} > ${tag}${classSel(el)}`);
+      add("Anywhere inside parent", `${pSel} ${tag}${classSel(el)}`);
+      if (sibs.length === 1) add("Only child", `${pSel} > ${tag}:only-child`);
+      else if (idx === 1) add("First child", `${pSel} > ${tag}:first-child`);
+      else if (idx === sibs.length) add("Last child", `${pSel} > ${tag}:last-child`);
+      add("Position among siblings", `${pSel} > :nth-child(${idx})`);
+      add("Position among same tags", `${pSel} > ${tag}:nth-of-type(${sameType.indexOf(el) + 1})`);
+      const prev = el.previousElementSibling;
+      if (prev) add("Right after a sibling", `${uniqueSelector(prev)} + ${tag}`);
+    }
+    add("Full path from <html>", fullPath(el));
+    return out;
+  }
+
+  function jsAccessors(el) {
+    const d = state.doc, out = [];
+    const add = (label, code) => { if (!out.some(o => o.code === code)) out.push({ label, code, best: out.length === 0 }); };
+    const idxIn = list => list.indexOf(el);
+    const tag = el.localName, cls = [...el.classList];
+    const name = el.getAttribute("name");
+
+    if (el === d.documentElement) add("Shortcut", "document.documentElement");
+    if (el === d.head) add("Shortcut", "document.head");
+    if (el === d.body) add("Shortcut", "document.body");
+    if (hasUniqueId(el)) add("By ID", `document.getElementById(${jsStr(el.id)})`);
+    add("querySelector", `document.querySelector(${jsStr(uniqueSelector(el))})`);
+    if (cls.length) add("By class name", `document.getElementsByClassName(${jsStr(cls[0])})[${idxIn([...d.getElementsByClassName(cls[0])])}]`);
+    add("By tag name", `document.getElementsByTagName(${jsStr(tag)})[${idxIn([...d.getElementsByTagName(tag)])}]`);
+
+    if (name) add("By name attribute", `document.getElementsByName(${jsStr(name)})[${idxIn([...d.getElementsByName(name)])}]`);
+    for (const c of cls.slice(1)) add("By class name", `document.getElementsByClassName(${jsStr(c)})[${idxIn([...d.getElementsByClassName(c)])}]`);
+    if (cls.length > 1) add("By all class names", `document.getElementsByClassName(${jsStr(cls.join(" "))})[${idxIn([...d.getElementsByClassName(cls.join(" "))])}]`);
+    if (cls.length) {
+      const s = tag + classSel(el);
+      add("querySelectorAll", `document.querySelectorAll(${jsStr(s)})[${idxIn(qsa(s))}]`);
+    }
+    if (tag === "form") add("document.forms", name ? `document.forms[${jsStr(name)}]` : `document.forms[${idxIn([...d.forms])}]`);
+    if (tag === "img") add("document.images", `document.images[${idxIn([...d.images])}]`);
+    if ((tag === "a" || tag === "area") && el.hasAttribute("href")) add("document.links", `document.links[${idxIn([...d.links])}]`);
+    if (tag === "script") add("document.scripts", `document.scripts[${idxIn([...d.scripts])}]`);
+    const form = el.closest("form");
+    if (form && name && ["input", "select", "textarea", "button", "fieldset", "output"].includes(tag)) {
+      const fName = form.getAttribute("name");
+      add("Inside its form", `${fName ? `document.forms[${jsStr(fName)}]` : `document.forms[${[...d.forms].indexOf(form)}]`}.elements[${jsStr(name)}]`);
+    }
+    const trav = childrenPath(el);
+    if (trav) add("Walking down with .children", trav);
+    const sib = siblingPath(el);
+    if (sib) add("Via siblings", sib);
+    const p = el.parentElement;
+    if (p && p !== d.documentElement) add("From its parent", `${anchorExpr(p)}.querySelector(${jsStr(":scope > " + uniqueChildSel(el))})`);
+    return out;
+  }
+
+  function anchorExpr(el) {
+    const d = state.doc;
+    if (el === d.body) return "document.body";
+    if (el === d.head) return "document.head";
+    if (el === d.documentElement) return "document.documentElement";
+    if (hasUniqueId(el)) return `document.getElementById(${jsStr(el.id)})`;
+    return `document.querySelector(${jsStr(uniqueSelector(el))})`;
+  }
+
+  function uniqueChildSel(el) {
+    const p = el.parentElement, tag = el.localName;
+    const sameType = [...p.children].filter(s => s.localName === tag);
+    if (sameType.length === 1) return tag;
+    if (el.classList.length && [...p.children].filter(s => s.matches(tag + classSel(el))).length === 1) return tag + classSel(el);
+    return `${tag}:nth-of-type(${sameType.indexOf(el) + 1})`;
+  }
+
+  function childrenPath(el) {
+    const d = state.doc, steps = [];
+    let cur = el;
+    while (cur) {
+      if (cur !== el && (cur === d.body || cur === d.head || cur === d.documentElement || hasUniqueId(cur))) break;
+      const parent = cur.parentElement;
+      if (!parent) return null;
+      steps.unshift(`.children[${[...parent.children].indexOf(cur)}]`);
+      cur = parent;
+    }
+    if (!cur || steps.length === 0 || steps.length > 8) return null;
+    return anchorExpr(cur) + steps.join("");
+  }
+
+  function siblingPath(el) {
+    const p = el.parentElement;
+    if (!p || p === state.doc.documentElement) return null;
+    const idx = [...p.children].indexOf(el), n = p.children.length, base = anchorExpr(p);
+    if (idx === 0) return `${base}.firstElementChild`;
+    if (idx === n - 1) return `${base}.lastElementChild`;
+    if (idx <= 3) return `${base}.firstElementChild` + ".nextElementSibling".repeat(idx);
+    if (n - 1 - idx <= 3) return `${base}.lastElementChild` + ".previousElementSibling".repeat(n - 1 - idx);
+    return null;
+  }
+
+  /* ---------- Several elements at once ---------- */
+  function sharedClasses(els) {
+    return els.map(e => new Set(e.classList)).reduce((a, b) => new Set([...a].filter(x => b.has(x))));
+  }
+
+  function combinedSelectors(els) {
+    const selSet = new Set(els);
+    const isExact = r => r && r.length === els.length && r.every(x => selSet.has(x));
+    const common = [...sharedClasses(els)];
+    const tags = new Set(els.map(e => e.localName));
+    const oneTag = tags.size === 1 ? [...tags][0] : null;
+    const commonCls = common.map(c => "." + cssEsc(c)).join("");
+
+    const cands = [];
+    if (commonCls) cands.push(["Shared classes", commonCls]);
+    if (oneTag && commonCls) cands.push(["Tag + shared classes", oneTag + commonCls]);
+    if (oneTag) cands.push(["Shared tag", oneTag]);
+    for (const c of common) cands.push(["Shared class", "." + cssEsc(c)]);
+    const parents = new Set(els.map(e => e.parentElement));
+    if (parents.size === 1 && [...parents][0]) {
+      const pSel = uniqueSelector([...parents][0]);
+      if (oneTag) cands.push(["Children of the same parent", `${pSel} > ${oneTag}${commonCls}`]);
+      cands.push(["All children of the parent", `${pSel} > *`]);
+    } else if (oneTag) {
+      let anc = els[0].parentElement;
+      while (anc && !els.every(e => anc.contains(e))) anc = anc.parentElement;
+      if (anc) cands.push(["Inside a common ancestor", `${uniqueSelector(anc)} ${oneTag}${commonCls}`]);
+    }
+
+    const out = [];
+    const add = (label, sel, best) => {
+      if (out.some(o => o.code === sel)) return;
+      const r = qsa(sel);
+      out.push({ label, code: sel, n: r ? r.length : -1, exact: isExact(r), best });
+    };
+    const bestGeneral = cands.find(([, s]) => isExact(qsa(s)));
+    if (bestGeneral) add(`Best – ${bestGeneral[0].toLowerCase()}`, bestGeneral[1], true);
+    add("List every element", els.map(uniqueSelector).join(", "), !bestGeneral);
+    for (const [l, s] of cands) add(l, s, false);
+    return out;
+  }
+
+  function combinedJs(els) {
+    const best = combinedSelectors(els)[0];
+    const q = jsStr(best.code);
+    const out = [
+      { label: "Loop over all of them", code: `document.querySelectorAll(${q}).forEach(el => {\n  // …\n});`, best: true },
+      { label: "Get them as a NodeList", code: `document.querySelectorAll(${q})` },
+      { label: "As a real array", code: `const els = [...document.querySelectorAll(${q})];` },
+    ];
+    const common = [...sharedClasses(els)];
+    if (common.length) {
+      const c = common.join(" ");
+      const r = [...state.doc.getElementsByClassName(c)];
+      const exact = r.length === els.length && els.every(e => r.includes(e));
+      out.push({ label: exact ? "By class name" : `By class name (also matches ${r.length - els.length} others)`, code: `document.getElementsByClassName(${jsStr(c)})` });
+    }
+    out.push({
+      label: "Each one in its own variable",
+      code: `const [${els.map(varName).join(", ")}] = [\n  ${els.map(e => jsAccessors(e)[0].code).join(",\n  ")}\n];`,
+    });
+    return out;
+  }
+
+  function varName(el, i) {
+    const base = (el.id || el.classList[0] || el.localName)
+      .replace(/[^a-zA-Z0-9]+(.)?/g, (_, c) => (c ? c.toUpperCase() : "")).replace(/^[0-9]/, "_$&");
+    return (base.charAt(0).toLowerCase() + base.slice(1) || "el") + (i + 1);
+  }
+
+  /* =========================================================
+     Details panel
+     ========================================================= */
+  const TOP = 4;
+
+  function pillFor(o, combined) {
+    if (o.n === undefined) return "";
+    if (o.n < 0) return `<span class="pill bad">invalid</span>`;
+    if (combined) return o.exact ? `<span class="pill ok">exact</span>` : `<span class="pill">${o.n} matches</span>`;
+    return o.n === 1 && o.hits ? `<span class="pill ok">unique</span>` : `<span class="pill">${o.n} matches</span>`;
+  }
+
+  function listHtml(items, combined) {
+    const shown = state.showMore ? items : items.slice(0, TOP);
+    let html = shown.map(o => `
+      <div class="sel${o.best ? " best" : ""}" data-copy="${esc(o.code)}" title="Click to copy">
+        <div class="main"><span class="lbl">${esc(o.label)}</span><code>${esc(o.code)}</code></div>
+        ${pillFor(o, combined)}
+        <span class="icon copy">content_copy</span>
+      </div>`).join("");
+    if (items.length > TOP) {
+      html += `<button class="more" data-more>${state.showMore
+        ? `Show less<span class="icon">expand_less</span>`
+        : `${items.length - TOP} more ways<span class="icon">expand_more</span>`}</button>`;
+    }
+    return html;
+  }
+
+  function tabsHtml() {
+    const b = (id, label) => `<button class="${state.tab === id ? "on" : ""}" data-tab="${id}">${label}</button>`;
+    return `<div class="d-tabs"><div class="seg">${b("css", "CSS")}${b("js", "JavaScript")}</div></div>`;
+  }
+
+  function openTag(el) {
+    let s = `<span class="tag">&lt;${esc(el.localName)}</span>`;
+    for (const a of el.attributes) {
+      if (a.name !== "id" && a.name !== "class") continue;
+      s += ` <span class="an">${esc(a.name)}=</span><span class="av">"${esc(a.value)}"</span>`;
+    }
+    return s + `<span class="tag">&gt;</span>`;
+  }
+
+  function renderDetails() {
+    renderCrumbs();
+    const n = state.selected.length;
+    const scrollTop = detailsEl.scrollTop;
+
+    if (!state.doc || n === 0) {
+      detailsEl.innerHTML = `<div class="empty">
+        <span class="icon">ads_click</span>
+        <h3>Click an element</h3>
+        <div>to see how to select it in CSS and JavaScript.</div>
+        <ul>
+          <li><kbd>Ctrl</kbd> + click – select several</li>
+          <li><kbd>Shift</kbd> + click – select a range</li>
+          <li><kbd>/</kbd> – test a CSS selector</li>
+          <li><kbd>Esc</kbd> – clear selection</li>
+        </ul>
+      </div>`;
+      return;
+    }
+
+    let html = "";
+    if (n === 1) {
+      const p = state.selected[0], el = state.byPath.get(p), parent = el.parentElement;
+      const extras = [];
+      if (parent) extras.push(`inside <span class="link mono" data-goto="${state.pathOf.get(parent)}">${esc(shortLabel(parent))}</span>`);
+      if (el.children.length) extras.push(plural(el.children.length, "child", "children"));
+      const items = state.tab === "css" ? cssSelectors(el) : jsAccessors(el);
+      html += `<div class="d-head cat-${catOf(el)}">
+          <div class="d-title">${openTag(el)}</div>
+          <div class="d-sub">${extras.join(" · ")}</div>
+        </div>
+        ${tabsHtml()}
+        ${listHtml(items, false)}`;
+
+      const attrs = [...el.attributes].filter(a => a.name !== "id" && a.name !== "class");
+      const text = NO_TEXT.has(el.localName) ? "" : el.textContent.trim().replace(/\s+/g, " ");
+      if (attrs.length) {
+        html += `<details class="extra"><summary><span class="icon">chevron_right</span>Other attributes (${attrs.length})</summary>
+          <dl class="kv">${attrs.map(a => `<dt>${esc(a.name)}</dt><dd>${a.value === "" ? "<i>(empty)</i>" : esc(truncate(a.value, 200))}</dd>`).join("")}</dl></details>`;
+      }
+      if (text) {
+        html += `<details class="extra"><summary><span class="icon">chevron_right</span>Text content</summary>
+          <div style="font-size:13px;color:var(--on-surface-variant);line-height:1.5;margin-top:6px">${esc(truncate(text, 600))}</div></details>`;
+      }
+    } else {
+      const els = state.selected.map(p => state.byPath.get(p));
+      const items = state.tab === "css" ? combinedSelectors(els) : combinedJs(els);
+      html += `<div class="d-head">
+          <div class="d-title" style="font-family:inherit;font-size:16px">${n} elements selected</div>
+          <div class="el-chips">${state.selected.map(p => `
+            <span class="el-chip cat-${catOf(state.byPath.get(p))}" data-goto="${p}" title="Show only this one">
+              <span class="tag" style="font-weight:500">${esc(chipLabel(state.byPath.get(p)))}</span>
+              <button class="x" data-remove="${p}" title="Remove from selection"><span class="icon">close</span></button>
+            </span>`).join("")}
+          </div>
+        </div>
+        ${tabsHtml()}
+        ${listHtml(items, true)}`;
+    }
+    detailsEl.innerHTML = html;
+    detailsEl.scrollTop = scrollTop;
+  }
+
+  detailsEl.addEventListener("click", e => {
+    const tab = e.target.closest("[data-tab]");
+    if (tab) { state.tab = tab.dataset.tab; state.showMore = false; renderDetails(); return; }
+    if (e.target.closest("[data-more]")) { state.showMore = !state.showMore; renderDetails(); return; }
+    const rm = e.target.closest("[data-remove]");
+    if (rm) {
+      state.selected = state.selected.filter(p => p !== rm.dataset.remove);
+      onSelectionChange();
+      return;
+    }
+    const s = e.target.closest("[data-copy]");
+    if (s) copy(s.dataset.copy);
+  });
+
+  /* =========================================================
+     Selector search
+     ========================================================= */
+  const input = $("#selectorInput");
+  function applySearch(doRender = true) {
+    const q = input.value.trim();
+    const mc = $("#matchCount");
+    state.matches = new Set();
+    $("#selectMatchesBtn").hidden = true;
+    mc.textContent = ""; mc.className = "count";
+    if (q && state.doc) {
+      const r = qsa(q);
+      if (!r) {
+        mc.textContent = "invalid selector"; mc.className = "count bad";
+      } else {
+        let expanded = false;
+        for (const el of r) {
+          const p = state.pathOf.get(el);
+          if (!p) continue;
+          state.matches.add(p);
+          if (r.length <= 200 && expandAncestors(p)) expanded = true;
+        }
+        mc.textContent = r.length === 1 ? "1 match" : `${r.length} matches`;
+        $("#selectMatchesBtn").hidden = r.length === 0;
+        if (expanded && doRender) return render();
+      }
+    }
+    if (doRender) refreshClasses();
+  }
+  input.addEventListener("input", () => applySearch());
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") selectMatches();
+    if (e.key === "Escape") { input.value = ""; applySearch(); input.blur(); }
+  });
+  function selectMatches() {
+    if (!state.matches.size) return;
+    state.selected = [...state.matches];
+    state.anchor = state.selected[0];
+    state.showMore = false;
+    onSelectionChange();
+    nodeByPath.get(state.selected[0])?.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+  }
+  $("#selectMatchesBtn").addEventListener("click", e => { e.preventDefault(); selectMatches(); });
+
+  /* =========================================================
+     Toolbar / misc wiring
+     ========================================================= */
+  $("#expandAllBtn").addEventListener("click", () => { if (state.doc) { state.collapsed = new Set(); render(); } });
+  $("#collapseAllBtn").addEventListener("click", () => {
+    if (!state.doc) return;
+    // Keep html + body open so there is something to look at
+    state.collapsed = new Set([...state.byPath].filter(([p, el]) => el.children.length && el !== state.doc.documentElement && el !== state.doc.body).map(([p]) => p));
+    render();
+  });
+
+  document.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "o") { e.preventDefault(); pickFile(); return; }
+    if (e.target === input) return;
+    if (e.key === "Escape" && state.selected.length) { state.selected = []; onSelectionChange(); }
+    if (e.key === "/") { e.preventDefault(); input.focus(); }
+  });
+
+  $("#openBtn").addEventListener("click", pickFile);
+  $("#openBtn2").addEventListener("click", pickFile);
+  $("#fileInput").addEventListener("change", e => { const f = e.target.files[0]; if (f) useStaticFile(f); e.target.value = ""; });
+
+  // Theme
+  const themeBtn = $("#themeBtn");
+  const isDark = () => document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  function applyTheme(t) {
+    if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+    themeBtn.querySelector(".icon").textContent = isDark() ? "light_mode" : "dark_mode";
+  }
+  applyTheme(store.get("domviz-theme"));
+  themeBtn.addEventListener("click", () => {
+    const t = isDark() ? "light" : "dark";
+    store.set("domviz-theme", t);
+    applyTheme(t);
+  });
+
+  // Resizable detail pane
+  (() => {
+    const sp = $("#splitter"), pane = $("#detailPane");
+    const w = +store.get("domviz-w");
+    if (w > 200) pane.style.width = w + "px";
+    sp.addEventListener("pointerdown", e => {
+      sp.setPointerCapture(e.pointerId); sp.classList.add("dragging");
+      const move = ev => { pane.style.width = Math.min(Math.max(window.innerWidth - ev.clientX, 300), window.innerWidth - 360) + "px"; };
+      const up = () => {
+        sp.classList.remove("dragging");
+        sp.removeEventListener("pointermove", move); sp.removeEventListener("pointerup", up);
+        store.set("domviz-w", parseInt(pane.style.width));
+      };
+      sp.addEventListener("pointermove", move); sp.addEventListener("pointerup", up);
+    });
+  })();
+
+  // Drag & drop a file
+  let dragDepth = 0;
+  window.addEventListener("dragenter", e => { e.preventDefault(); dragDepth++; document.body.classList.add("dragging"); });
+  window.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove("dragging"); } });
+  window.addEventListener("dragover", e => e.preventDefault());
+  window.addEventListener("drop", async e => {
+    e.preventDefault();
+    dragDepth = 0; document.body.classList.remove("dragging");
+    const item = [...e.dataTransfer.items].find(i => i.kind === "file");
+    if (!item) return;
+    // Both must be grabbed synchronously – the DataTransfer is emptied after the first await.
+    const handlePromise = item.getAsFileSystemHandle ? item.getAsFileSystemHandle().catch(() => null) : null;
+    const f = item.getAsFile();
+    const h = handlePromise ? await handlePromise : null;
+    if (h && h.kind === "file") return useHandle(h);
+    if (f) useStaticFile(f);
+  });
+
+  // Offer to reopen the last file
+  (async () => {
+    if (!supportsFSA) { $("#compatWarn").classList.add("show"); return; }
+    try {
+      const h = await kv.get("lastHandle");
+      if (!h) return;
+      $("#reopenBtn").hidden = false;
+      $("#reopenLabel").textContent = `Reopen ${h.name}`;
+      $("#reopenBtn").addEventListener("click", async () => {
+        try {
+          let perm = await h.queryPermission({ mode: "read" });
+          if (perm !== "granted") perm = await h.requestPermission({ mode: "read" });
+          if (perm === "granted") await useHandle(h);
+          else snack(`<span class="icon">block</span>Permission denied`);
+        } catch (err) {
+          console.error(err);
+          snack(`<span class="icon">error</span>Couldn't reopen the file – please pick it again.`, 3000);
+        }
+      });
+    } catch { /* storage unavailable */ }
+  })();
+
+  state.view = store.get("domviz-view") === "flow" ? "flow" : "boxes";
+  renderDetails();
+})();
+</script>
+</body>
+</html>
