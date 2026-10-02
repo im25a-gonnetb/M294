@@ -1,0 +1,6 @@
+# Fremde Repos (eigene .git), nicht mitversionieren
+zli-m294-264738/
+tasks-backend/
+
+# Kursmaterial (Moodle-Export), nicht auf GitHub
+M294_all_the_fucking_material/
